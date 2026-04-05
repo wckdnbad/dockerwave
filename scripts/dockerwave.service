@@ -1,0 +1,20 @@
+[Unit]
+Description=DockerWave Flask API
+After=network.target redis.service
+
+[Service]
+User=ubuntu
+Group=docker
+WorkingDirectory=/home/ubuntu/dockerwave/server
+Environment="PATH=/home/ubuntu/dockerwave/server/venv/bin"
+EnvironmentFile=/home/ubuntu/dockerwave/server/.env
+ExecStart=/home/ubuntu/dockerwave/server/venv/bin/gunicorn app:app \
+    --workers 2 \
+    --bind 127.0.0.1:5555 \
+    --access-logfile /var/log/dockerwave/access.log \
+    --error-logfile /var/log/dockerwave/error.log
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

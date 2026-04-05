@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, session
 from flask_bcrypt import Bcrypt
 from flask_session import Session
-from uuid import uuid4 
+from uuid import uuid4
 from flask_cors import CORS
 from config import ApplicationConfig
 from models import db, User, Container
@@ -10,9 +10,11 @@ from sqlalchemy import asc, desc
 import random
 import tarfile
 from io import BytesIO
+from os import environ
 
 app = Flask(__name__)
-CORS(app, origins="*", supports_credentials=True)
+allowed_origins = environ.get("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+CORS(app, origins=allowed_origins, supports_credentials=True)
 bcrypt = Bcrypt(app)
 
 app.config.from_object(ApplicationConfig)
@@ -22,7 +24,10 @@ with app.app_context():
 
 Session(app)
 
-docker_client = docker.from_env()
+try:
+    docker_client = docker.from_env()
+except Exception:
+    docker_client = None
 
 
 @app.route("/register", methods=["POST"])

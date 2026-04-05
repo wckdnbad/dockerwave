@@ -8,7 +8,7 @@ class User(db.Model):
     __tablename__ = "users"
     id = db.Column(db.String, primary_key=True, default=uuid4) 
     email = db.Column(db.String, unique=True)
-    password = db.Column(db.String(30))
+    password = db.Column(db.String(255))
     containers = relationship("Container", backref="user", lazy=True)
 
 class Container(db.Model):
