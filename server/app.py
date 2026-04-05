@@ -11,10 +11,37 @@ import random
 import tarfile
 from io import BytesIO
 from os import environ
+import logging
+import time
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(name)s %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 allowed_origins = environ.get("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 CORS(app, origins=allowed_origins, supports_credentials=True)
+
+
+@app.before_request
+def start_timer():
+    request._start_time = time.time()
+
+
+@app.after_request
+def log_request(response):
+    duration = round((time.time() - request._start_time) * 1000, 2)
+    logger.info(
+        "%s %s %s %sms user=%s",
+        request.method,
+        request.path,
+        response.status_code,
+        duration,
+        session.get("user_id", "anonymous")
+    )
+    return response
 bcrypt = Bcrypt(app)
 
 app.config.from_object(ApplicationConfig)
@@ -28,6 +55,29 @@ try:
     docker_client = docker.from_env()
 except Exception:
     docker_client = None
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    checks = {
+        "redis": False,
+        "database": False,
+        "docker": docker_client is not None
+    }
+    try:
+        from config import ApplicationConfig
+        ApplicationConfig.SESSION_REDIS.ping()
+        checks["redis"] = True
+    except Exception:
+        pass
+    try:
+        db.session.execute(db.text("SELECT 1"))
+        checks["database"] = True
+    except Exception:
+        pass
+
+    status = "ok" if all(checks.values()) else "degraded"
+    return jsonify({"status": status, "checks": checks}), 200
 
 
 @app.route("/register", methods=["POST"])
