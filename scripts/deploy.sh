@@ -3,7 +3,7 @@
 # Usage: bash deploy.sh
 set -e
 
-APP_DIR="/home/ubuntu/dockerwave"
+APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "==> Pulling latest code"
 cd "$APP_DIR"
@@ -17,7 +17,7 @@ pip install -r requirements.txt
 
 echo "==> Building React frontend"
 cd "$APP_DIR/client"
-npm ci
+npm install
 npm run build
 
 echo "==> Restarting Flask"
